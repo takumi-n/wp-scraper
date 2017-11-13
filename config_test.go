@@ -1,0 +1,60 @@
+package main
+
+import (
+    "testing"
+    "github.com/stretchr/testify/assert"
+)
+
+func TestConfigMarshal(t *testing.T) {
+    ast := assert.New(t)
+    yaml := `
+destination: https://example.com/destination
+site_name: Google
+auth_username: Joe
+auth_password: secret
+base_url: https://example.com/base
+categories:
+     - Food
+     - Medical
+     - Lifestyle
+     - Fashion
+article_selector: article
+classes:
+    title:
+        css: title-css
+        target: text
+    url:
+        css: url-css
+        target: attribute
+        additional_css: href
+    eyecatch:
+        css: eyecatch-css
+        target: attribute
+        additional_css: src
+    content:
+        css: content-css
+        target: text
+`
+
+    c, err := marshalYAMLByte([]byte(yaml))
+    ast.Nil(err)
+
+    ast.Equal("Joe", c.AuthUsername)
+    ast.Equal("Food", c.Categories[0])
+    ast.Equal("title-css", c.Class.Title.CSS)
+    ast.Equal("", c.Class.Title.AdditionalCSS)
+    ast.Equal("href", c.Class.URL.AdditionalCSS)
+}
+
+func TestNormalizeConfig(t *testing.T) {
+    ast := assert.New(t)
+
+    c := new(Config)
+    c.Destination = "http://example.com/destination/"
+    c.BaseURL = "http://example.com/base/"
+
+    normalizeConfig(c)
+
+    ast.Equal("http://example.com/destination", c.Destination)
+    ast.Equal("http://example.com/base", c.BaseURL)
+}
