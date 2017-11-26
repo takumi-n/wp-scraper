@@ -1,13 +1,13 @@
-package main
+package scraper
 
 import (
-    "testing"
-    "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestConfigMarshal(t *testing.T) {
-    ast := assert.New(t)
-    yaml := `
+	ast := assert.New(t)
+	yaml := `
 destination: https://example.com/destination
 site_name: Google
 auth_username: Joe
@@ -36,25 +36,25 @@ classes:
         target: text
 `
 
-    c, err := marshalYAMLByte([]byte(yaml))
-    ast.Nil(err)
+	c, err := marshalYAMLByte([]byte(yaml))
+	ast.Nil(err)
 
-    ast.Equal("Joe", c.AuthUsername)
-    ast.Equal("Food", c.Categories[0])
-    ast.Equal("title-css", c.Class.Title.CSS)
-    ast.Equal("", c.Class.Title.AdditionalCSS)
-    ast.Equal("href", c.Class.URL.AdditionalCSS)
+	ast.Equal("Joe", c.AuthUsername)
+	ast.Equal("Food", c.Categories[0])
+	ast.Equal("title-css", c.Class.Title.CSS)
+	ast.Equal("", c.Class.Title.AdditionalCSS)
+	ast.Equal("href", c.Class.URL.AdditionalCSS)
 }
 
 func TestNormalizeConfig(t *testing.T) {
-    ast := assert.New(t)
+	ast := assert.New(t)
 
-    c := new(Config)
-    c.Destination = "http://example.com/destination/"
-    c.BaseURL = "http://example.com/base/"
+	c := new(Config)
+	c.Destination = "http://example.com/destination/"
+	c.BaseURL = "http://example.com/base/"
 
-    normalizeConfig(c)
+	normalizeConfig(c)
 
-    ast.Equal("http://example.com/destination", c.Destination)
-    ast.Equal("http://example.com/base", c.BaseURL)
+	ast.Equal("http://example.com/destination", c.Destination)
+	ast.Equal("http://example.com/base", c.BaseURL)
 }
