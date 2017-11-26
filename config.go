@@ -10,7 +10,6 @@ type (
 		Title    classSelector `yaml:"title"`
 		URL      classSelector `yaml:"url"`
 		Eyecatch classSelector `yaml:"eyecatch"`
-		Content  classSelector `yaml:"content"`
 	}
 
 	classSelector struct {

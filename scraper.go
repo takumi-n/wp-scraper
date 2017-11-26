@@ -18,7 +18,6 @@ type (
 		Title    string
 		Url      string
 		Eyecatch string
-		Content  string
 	}
 )
 
@@ -81,7 +80,7 @@ func (s *Scraper) scrapeCategory(url string) ([]Article, error) {
 			return
 		}
 
-		var title, url, eyecatch, content string
+		var title, url, eyecatch string
 
 		switch s.config.Class.Title.Target {
 		case "text":
@@ -113,20 +112,7 @@ func (s *Scraper) scrapeCategory(url string) ([]Article, error) {
 			}
 		}
 
-		var contentDoc *goquery.Document
-		contentDoc, err = goquery.NewDocument(url)
-
-		switch s.config.Class.Content.Target {
-		case "text":
-			content = contentDoc.Find(s.config.Class.Content.CSS).Text()
-		case "attribute":
-			c, ok := contentDoc.Find(s.config.Class.Content.CSS).Attr(s.config.Class.Content.AdditionalCSS)
-			if ok {
-				content = c
-			}
-		}
-
-		article := Article{Title: title, Url: url, Eyecatch: eyecatch, Content: content}
+		article := Article{Title: title, Url: url, Eyecatch: eyecatch}
 		articles = append(articles, article)
 	})
 

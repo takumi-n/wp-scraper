@@ -31,9 +31,6 @@ classes:
         css: eyecatch-css
         target: attribute
         additional_css: src
-    content:
-        css: content-css
-        target: text
 `
 
 	c, err := marshalYAMLByte([]byte(yaml))
