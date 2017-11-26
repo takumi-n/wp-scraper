@@ -1,6 +1,9 @@
 package scraper
 
-import "github.com/PuerkitoBio/goquery"
+import (
+	"github.com/PuerkitoBio/goquery"
+	"regexp"
+)
 
 type (
 	Scraper struct {
@@ -34,26 +37,26 @@ func (s *Scraper) Scrape(limit int) ([]Result, error) {
 	resultCh := make(chan Result)
 	errCh := make(chan error)
 
-	for _, category := range s.config.Categories {
-		url := s.config.BaseURL + category
-		go func() {
+	for categoryPath, category := range s.config.Categories {
+		url := s.config.BaseURL + categoryPath
+		go func(url, category string) {
 			articles, err := s.scrapeCategory(url)
 			if err != nil {
 				errCh <- err
 			}
 
 			resultCh <- Result{Category: category, Articles: articles}
-		}()
+		}(url, category)
 	}
 
-	var resultCount int
+	resultCount := 0
 	for {
 		select {
 		case result := <-resultCh:
 			s.results = append(s.results, result)
 			resultCount++
 
-			if resultCount == len(s.results) {
+			if resultCount == len(s.config.Categories) {
 				return s.results, nil
 			}
 
@@ -92,6 +95,13 @@ func (s *Scraper) scrapeCategory(url string) ([]Article, error) {
 			}
 		}
 
+		if pattern := s.config.Class.Title.Regex; pattern != "" {
+			r := regexp.MustCompile(pattern)
+			group := r.FindSubmatch([]byte(title))
+
+			title = string(group[1])
+		}
+
 		switch s.config.Class.URL.Target {
 		case "text":
 			url = selection.Find(s.config.Class.URL.CSS).Text()
@@ -102,6 +112,13 @@ func (s *Scraper) scrapeCategory(url string) ([]Article, error) {
 			}
 		}
 
+		if pattern := s.config.Class.URL.Regex; pattern != "" {
+			r := regexp.MustCompile(pattern)
+			group := r.FindSubmatch([]byte(url))
+
+			url = string(group[1])
+		}
+
 		switch s.config.Class.Eyecatch.Target {
 		case "text":
 			eyecatch = selection.Find(s.config.Class.Eyecatch.CSS).Text()
@@ -110,6 +127,13 @@ func (s *Scraper) scrapeCategory(url string) ([]Article, error) {
 			if ok {
 				eyecatch = e
 			}
+		}
+
+		if pattern := s.config.Class.Eyecatch.Regex; pattern != "" {
+			r := regexp.MustCompile(pattern)
+			group := r.FindSubmatch([]byte(eyecatch))
+
+			eyecatch = string(group[1])
 		}
 
 		article := Article{Title: title, Url: url, Eyecatch: eyecatch}

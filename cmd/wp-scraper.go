@@ -39,8 +39,7 @@ func main() {
 	if err != nil {
 		exitWithError(err)
 	}
-
-	println(result)
+	fmt.Println(result)
 
 	if *testOpt {
 		fmt.Println("Quit because test mode is enabled")
