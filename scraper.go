@@ -70,7 +70,8 @@ func (s *Scraper) Scrape(limit int) error {
 }
 
 // Send scraped data to destination server
-func (s *Scraper) SendToServer() error {
+// Return created url
+func (s *Scraper) SendToServer() (string, error) {
 	type (
 		categoryJsonData struct {
 			ID     int    `json:"id"`
@@ -90,6 +91,32 @@ func (s *Scraper) SendToServer() error {
 			Articles []articleJsonData `json:"articles"`
 		}
 	)
+
+	// create site on demo server
+	endpointToCreateSite := s.config.Destination + "/sites/" + s.config.SiteName
+	req, err := http.NewRequest(
+		"POST",
+		endpointToCreateSite,
+		bytes.NewBufferString(""),
+	)
+
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.SetBasicAuth(s.config.AuthUsername, s.config.AuthPassword)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return "", err
+	}
+	resp.Body.Close()
+
+	// post articles
+	endpointToPostArticles := endpointToCreateSite + "/articles/"
 
 	categoryID := 1
 
@@ -119,17 +146,17 @@ func (s *Scraper) SendToServer() error {
 		jsonBytes, err := json.Marshal(requestJson)
 
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		req, err := http.NewRequest(
 			"POST",
-			s.config.Destination,
+			endpointToPostArticles,
 			bytes.NewBuffer(jsonBytes),
 		)
 
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		req.Header.Set("Content-Type", "application/json")
@@ -139,14 +166,14 @@ func (s *Scraper) SendToServer() error {
 		resp, err := client.Do(req)
 
 		if err != nil {
-			return err
+			return "", err
 		}
-		defer resp.Body.Close()
+		resp.Body.Close()
 
 		categoryID++
 	}
 
-	return nil
+	return endpointToPostArticles, nil
 }
 
 func (s *Scraper) scrapeCategory(url string) ([]Article, error) {

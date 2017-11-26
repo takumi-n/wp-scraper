@@ -45,10 +45,13 @@ func main() {
 		return
 	}
 
-	err = scraper.SendToServer()
+	url, err := scraper.SendToServer()
+
 	if err != nil {
 		exitWithError(err)
 	}
+
+	fmt.Println("Successfully created demo site: " + url)
 }
 
 func exitWithError(err error) {
