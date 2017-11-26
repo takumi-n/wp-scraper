@@ -70,5 +70,5 @@ fabric.properties
 
 # wp-scraper
 cmd/wp-scraper
-
+conf/
 
