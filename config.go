@@ -6,16 +6,17 @@ import (
 )
 
 type (
-	class struct {
-		Title    classSelector `yaml:"title"`
-		URL      classSelector `yaml:"url"`
-		Eyecatch classSelector `yaml:"eyecatch"`
+	Class struct {
+		Title    ClassSelector `yaml:"title"`
+		URL      ClassSelector `yaml:"url"`
+		Eyecatch ClassSelector `yaml:"eyecatch"`
 	}
 
-	classSelector struct {
+	ClassSelector struct {
 		CSS           string `yaml:"css"`
 		Target        string `yaml:"target"`
 		AdditionalCSS string `yaml:"additional_css"`
+		Regex         string `yaml:"regex"`
 	}
 
 	Config struct {
@@ -26,7 +27,7 @@ type (
 		BaseURL         string            `yaml:"base_url"`
 		Categories      map[string]string `yaml:"categories"`
 		ArticleSelector string            `yaml:"article_selector"`
-		Class           class             `yaml:"classes"`
+		Class           Class             `yaml:"classes"`
 	}
 )
 
