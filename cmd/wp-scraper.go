@@ -13,7 +13,7 @@ const (
 )
 
 var (
-	testOpt    = flag.Bool("b", false, "Enable test mode")
+	testOpt    = flag.Bool("t", false, "Enable test mode")
 	limitOpt   = flag.Int("l", -1, "Acquire up to this limit articles")
 	verboseOpt = flag.Bool("v", false, "Make the operation more talkative")
 )
@@ -33,6 +33,9 @@ func main() {
 		exitWithError(err)
 	}
 
+	// If test mode is enabled, verbose mode will be enabled automatically
+	*verboseOpt = *verboseOpt || *testOpt
+
 	scraper := scraper.NewScraper(*config, *verboseOpt)
 	err = scraper.Scrape(*limitOpt)
 
@@ -51,7 +54,8 @@ func main() {
 		exitWithError(err)
 	}
 
-	fmt.Println("Successfully created demo site: " + url)
+	fmt.Println("Successfully created demo site: ")
+	fmt.Println(url)
 }
 
 func exitWithError(err error) {

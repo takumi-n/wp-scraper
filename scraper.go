@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"strconv"
 )
 
 type (
@@ -43,23 +45,31 @@ func (s *Scraper) Scrape(limit int) error {
 	for categoryPath, category := range s.config.Categories {
 		url := s.config.BaseURL + categoryPath
 		go func(url, category string) {
+			s.printVerbosely("[" + category + "] Scraping " + url + " ...")
 			articles, err := s.scrapeCategory(url)
 			if err != nil {
 				errCh <- err
 			}
 
+			s.printVerbosely("[" + category + "] Result: len = " + strconv.Itoa(len(articles)))
+
 			resultCh <- Result{Category: category, Articles: articles}
 		}(url, category)
 	}
 
-	resultCount := 0
 	for {
 		select {
 		case result := <-resultCh:
 			s.results = append(s.results, result)
-			resultCount++
 
-			if resultCount == len(s.config.Categories) {
+			if len(s.results) == len(s.config.Categories) {
+				if s.isVerbose {
+					count := 0
+					for _, result := range s.results {
+						count += len(result.Articles)
+					}
+					s.printVerbosely(fmt.Sprintf("Total result: category len = %v, article len = %v", len(s.results), count))
+				}
 				return nil
 			}
 
@@ -72,6 +82,24 @@ func (s *Scraper) Scrape(limit int) error {
 // Send scraped data to destination server
 // Return created url
 func (s *Scraper) SendToServer() (string, error) {
+	// create site on demo server
+	endpointToCreateSite := s.config.Destination + "/sites/" + s.config.SiteName
+	req, err := createHttpRequest("POST", endpointToCreateSite, []byte(""))
+
+	if err != nil {
+		return "", err
+	}
+
+	s.setupRequest(req)
+
+	resp, err := (&http.Client{}).Do(req)
+
+	if err != nil {
+		return "", err
+	}
+	resp.Body.Close()
+
+	// post articles
 	type (
 		categoryJsonData struct {
 			ID     int    `json:"id"`
@@ -92,37 +120,16 @@ func (s *Scraper) SendToServer() (string, error) {
 		}
 	)
 
-	// create site on demo server
-	endpointToCreateSite := s.config.Destination + "/sites/" + s.config.SiteName
-	req, err := http.NewRequest(
-		"POST",
-		endpointToCreateSite,
-		bytes.NewBufferString(""),
-	)
-
-	if err != nil {
-		return "", err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.SetBasicAuth(s.config.AuthUsername, s.config.AuthPassword)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return "", err
-	}
-	resp.Body.Close()
-
-	// post articles
 	endpointToPostArticles := endpointToCreateSite + "/articles/"
 
+	articleID := 1
 	categoryID := 1
 
 	for _, result := range s.results {
-		var articleJsons []articleJsonData
-		articleID := 1
+		categoryJson := categoryJsonData{ID: categoryID, Name: result.Category, Source: "http://example.com"}
+		requestJson := requestJsonData{
+			Category: categoryJson,
+		}
 
 		for _, article := range result.Articles {
 			articleJson := articleJsonData{
@@ -132,16 +139,11 @@ func (s *Scraper) SendToServer() (string, error) {
 				Eyecatch: article.Eyecatch,
 			}
 
-			articleJsons = append(articleJsons, articleJson)
-
+			requestJson.Articles = append(requestJson.Articles, articleJson)
 			articleID++
 		}
 
-		categoryJson := categoryJsonData{ID: categoryID, Name: result.Category, Source: "http://example.com"}
-		requestJson := requestJsonData{
-			Category: categoryJson,
-			Articles: articleJsons,
-		}
+		s.printVerbosely("[" + result.Category + "] POST to demo server")
 
 		jsonBytes, err := json.Marshal(requestJson)
 
@@ -149,21 +151,15 @@ func (s *Scraper) SendToServer() (string, error) {
 			return "", err
 		}
 
-		req, err := http.NewRequest(
-			"POST",
-			endpointToPostArticles,
-			bytes.NewBuffer(jsonBytes),
-		)
+		req, err := createHttpRequest("POST", endpointToPostArticles, jsonBytes)
 
 		if err != nil {
 			return "", err
 		}
 
-		req.Header.Set("Content-Type", "application/json")
-		req.SetBasicAuth(s.config.AuthUsername, s.config.AuthPassword)
+		s.setupRequest(req)
 
-		client := &http.Client{}
-		resp, err := client.Do(req)
+		resp, err := (&http.Client{}).Do(req)
 
 		if err != nil {
 			return "", err
@@ -250,4 +246,23 @@ func (s *Scraper) scrapeCategory(url string) ([]Article, error) {
 	}
 
 	return articles, nil
+}
+
+func (s *Scraper) printVerbosely(message string) {
+	if s.isVerbose {
+		fmt.Println(message)
+	}
+}
+
+func (s *Scraper) setupRequest(req *http.Request) {
+	req.Header.Set("Content-Type", "application/json")
+	req.SetBasicAuth(s.config.AuthUsername, s.config.AuthPassword)
+}
+
+func createHttpRequest(method, url string, body []byte) (*http.Request, error) {
+	return http.NewRequest(
+		method,
+		url,
+		bytes.NewBuffer(body),
+	)
 }
