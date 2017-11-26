@@ -68,6 +68,10 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+# more golang
+vendor/
+Gopkg.lock
+
 # wp-scraper
 cmd/wp-scraper
 conf/
