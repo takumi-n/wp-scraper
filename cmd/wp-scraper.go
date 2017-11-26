@@ -34,18 +34,23 @@ func main() {
 	}
 
 	scraper := scraper.NewScraper(*config, *verboseOpt)
-	err = scraper.Scrape(*limitOpt)
+	result, err := scraper.Scrape(*limitOpt)
 
 	if err != nil {
 		exitWithError(err)
 	}
+
+	println(result)
 
 	if *testOpt {
 		fmt.Println("Quit because test mode is enabled")
 		return
 	}
 
-	scraper.SendToServer()
+	err = scraper.SendToServer()
+	if err != nil {
+		exitWithError(err)
+	}
 }
 
 func exitWithError(err error) {

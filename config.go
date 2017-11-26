@@ -20,14 +20,14 @@ type (
 	}
 
 	Config struct {
-		Destination     string   `yaml:"destination"`
-		SiteName        string   `yaml:"site_name"`
-		AuthUsername    string   `yaml:"auth_username"`
-		AuthPassword    string   `yaml:"auth_password"`
-		BaseURL         string   `yaml:"base_url"`
-		Categories      []string `yaml:"categories"`
-		ArticleSelector string   `yaml:"article_selector"`
-		Class           class    `yaml:"classes"`
+		Destination     string            `yaml:"destination"`
+		SiteName        string            `yaml:"site_name"`
+		AuthUsername    string            `yaml:"auth_username"`
+		AuthPassword    string            `yaml:"auth_password"`
+		BaseURL         string            `yaml:"base_url"`
+		Categories      map[string]string `yaml:"categories"`
+		ArticleSelector string            `yaml:"article_selector"`
+		Class           class             `yaml:"classes"`
 	}
 )
 

@@ -6,19 +6,19 @@ type (
 	Scraper struct {
 		config    Config
 		isVerbose bool
-		results   []result
+		results   []Result
 	}
 
-	result struct {
-		category string
-		articles []article
+	Result struct {
+		Category string
+		Articles []Article
 	}
 
-	article struct {
-		title    string
-		url      string
-		eyecatch string
-		content  string
+	Article struct {
+		Title    string
+		Url      string
+		Eyecatch string
+		Content  string
 	}
 )
 
@@ -31,8 +31,8 @@ func NewScraper(config Config, isVerbose bool) *Scraper {
 }
 
 // Start scraping with limit
-func (s *Scraper) Scrape(limit int) error {
-	resultCh := make(chan result)
+func (s *Scraper) Scrape(limit int) ([]Result, error) {
+	resultCh := make(chan Result)
 	errCh := make(chan error)
 
 	for _, category := range s.config.Categories {
@@ -43,7 +43,7 @@ func (s *Scraper) Scrape(limit int) error {
 				errCh <- err
 			}
 
-			resultCh <- result{category: category, articles: articles}
+			resultCh <- Result{Category: category, Articles: articles}
 		}()
 	}
 
@@ -55,27 +55,27 @@ func (s *Scraper) Scrape(limit int) error {
 			resultCount++
 
 			if resultCount == len(s.results) {
-				return nil
+				return s.results, nil
 			}
 
 		case err := <-errCh:
-			return err
+			return []Result{}, err
 		}
 	}
 }
 
 // Send scraped data to destination server
-func (s *Scraper) SendToServer() {
-
+func (s *Scraper) SendToServer() error {
+	return nil
 }
 
-func (s *Scraper) scrapeCategory(url string) ([]article, error) {
+func (s *Scraper) scrapeCategory(url string) ([]Article, error) {
 	doc, err := goquery.NewDocument(url)
 	if err != nil {
 		return nil, err
 	}
 
-	var articles []article
+	var articles []Article
 	doc.Find(s.config.ArticleSelector).Each(func(_ int, selection *goquery.Selection) {
 		if err != nil {
 			return
@@ -126,7 +126,7 @@ func (s *Scraper) scrapeCategory(url string) ([]article, error) {
 			}
 		}
 
-		article := article{title: title, url: url, eyecatch: eyecatch, content: content}
+		article := Article{Title: title, Url: url, Eyecatch: eyecatch, Content: content}
 		articles = append(articles, article)
 	})
 

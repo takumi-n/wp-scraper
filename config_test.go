@@ -14,10 +14,10 @@ auth_username: Joe
 auth_password: secret
 base_url: https://example.com/base
 categories:
-     - Food
-     - Medical
-     - Lifestyle
-     - Fashion
+     Food: food_url
+     Medical: medical_url
+     Lifestyle: lifecycle_url
+     Fashion: fashion_url
 article_selector: article
 classes:
     title:
@@ -40,7 +40,7 @@ classes:
 	ast.Nil(err)
 
 	ast.Equal("Joe", c.AuthUsername)
-	ast.Equal("Food", c.Categories[0])
+	ast.Equal("food_url", c.Categories["Food"])
 	ast.Equal("title-css", c.Class.Title.CSS)
 	ast.Equal("", c.Class.Title.AdditionalCSS)
 	ast.Equal("href", c.Class.URL.AdditionalCSS)
