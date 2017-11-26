@@ -3,6 +3,9 @@ package scraper
 import (
 	"github.com/PuerkitoBio/goquery"
 	"regexp"
+	"net/http"
+	"bytes"
+	"encoding/json"
 )
 
 type (
@@ -33,7 +36,7 @@ func NewScraper(config Config, isVerbose bool) *Scraper {
 }
 
 // Start scraping with limit
-func (s *Scraper) Scrape(limit int) ([]Result, error) {
+func (s *Scraper) Scrape(limit int) error {
 	resultCh := make(chan Result)
 	errCh := make(chan error)
 
@@ -57,17 +60,92 @@ func (s *Scraper) Scrape(limit int) ([]Result, error) {
 			resultCount++
 
 			if resultCount == len(s.config.Categories) {
-				return s.results, nil
+				return nil
 			}
 
 		case err := <-errCh:
-			return []Result{}, err
+			return err
 		}
 	}
 }
 
 // Send scraped data to destination server
 func (s *Scraper) SendToServer() error {
+	type (
+		categoryJsonData struct {
+			ID     int    `json:"id"`
+			Name   string `json:"name"`
+			Source string `json:"source"`
+		}
+
+		articleJsonData struct {
+			ID       int    `json:"id"`
+			Title    string `json:"title"`
+			Link     string `json:"link"`
+			Eyecatch string `json:"eyecatch"`
+		}
+
+		requestJsonData struct {
+			Category categoryJsonData  `json:"category"`
+			Articles []articleJsonData `json:"articles"`
+		}
+	)
+
+	categoryID := 1
+
+	for _, result := range s.results {
+		var articleJsons []articleJsonData
+		articleID := 1
+
+		for _, article := range result.Articles {
+			articleJson := articleJsonData{
+				ID:       articleID,
+				Title:    article.Title,
+				Link:     article.Url,
+				Eyecatch: article.Eyecatch,
+			}
+
+			articleJsons = append(articleJsons, articleJson)
+
+			articleID++
+		}
+
+		categoryJson := categoryJsonData{ID: categoryID, Name: result.Category, Source: "http://example.com"}
+		requestJson := requestJsonData{
+			Category: categoryJson,
+			Articles: articleJsons,
+		}
+
+		jsonBytes, err := json.Marshal(requestJson)
+
+		if err != nil {
+			return err
+		}
+
+		req, err := http.NewRequest(
+			"POST",
+			s.config.Destination,
+			bytes.NewBuffer(jsonBytes),
+		)
+
+		if err != nil {
+			return err
+		}
+
+		req.Header.Set("Content-Type", "application/json")
+		req.SetBasicAuth(s.config.AuthUsername, s.config.AuthPassword)
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		categoryID++
+	}
+
 	return nil
 }
 
