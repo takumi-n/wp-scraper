@@ -68,4 +68,7 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+# wp-scraper
+cmd/wp-scraper
+
 
