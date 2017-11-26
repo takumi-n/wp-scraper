@@ -3,7 +3,6 @@ package scraper
 import (
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"fmt"
 )
 
 func TestConfigMarshal(t *testing.T) {
@@ -28,11 +27,11 @@ classes:
         css: url-css
         target: attribute
         additional_css: href
-        regex: abc(.+)
     eyecatch:
         css: eyecatch-css
         target: attribute
         additional_css: src
+        regex: abc(.+)
 `
 
 	c, err := marshalYAMLByte([]byte(yaml))
@@ -43,8 +42,8 @@ classes:
 	ast.Equal("title-css", c.Class.Title.CSS)
 	ast.Equal("", c.Class.Title.AdditionalCSS)
 	ast.Equal("href", c.Class.URL.AdditionalCSS)
-	fmt.Println("REGEX = " + c.Class.URL.Regex)
-	ast.Equal("abc(.+)", c.Class.URL.Regex)
+	ast.Equal("", c.Class.URL.Regex)
+	ast.Equal("abc(.+)", c.Class.Eyecatch.Regex)
 }
 
 func TestNormalizeConfig(t *testing.T) {
